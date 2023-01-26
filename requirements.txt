@@ -1,0 +1,6 @@
+clickhouse-driver
+pandas==1.5.1
+pytz
+pytest
+jdatetime
+mysql-connector-python
