@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: mariadb_10-6
+    command: --innodb-buffer-pool-size=1G --max-heap-table-size=200M --tmp-table-size=200M
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+    ports:
+      - 3309:3306
+    volumes:
+      - ./data/mysql:/var/lib/mysql/
+  mysqld-exporter:
+    image: prom/mysqld-exporter:latest
+    container_name: mysql_exporter
+    ports:
+      - 9104:9104
+    environment:
+      - "DATA_SOURCE_NAME=root:123456@(mariadb:3306)/"
+
+ 
+

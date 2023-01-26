@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: registry.docker.ir/prom/prometheus
+    container_name: prometheus
+    restart: always
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+    ports:
+      - 9090:9090
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      
+  grafana:
+    image: grafana/grafana
+    container_name: grafana_monitoring
+    ports:
+      - 3000:3000
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      
+volumes:
+  grafana-storage:
