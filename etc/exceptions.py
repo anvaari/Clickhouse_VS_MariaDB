@@ -29,3 +29,7 @@ class DataExceptions(Exception):
     """
     """
     pass
+class DataNotFoundError(DataExceptions):
+    """
+    This error will raise when data not found in system files
+    """
