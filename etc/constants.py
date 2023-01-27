@@ -32,3 +32,8 @@ posts_columns = {'sid':'id','sid_profile':'profile_id','location_id':'location_i
 profiles_columns = {'sid':'id','profile_name':'username','firstname_lastname':'name','followers':'followers','following':'followings','n_posts':'number_of_posts'}
 locations_columns = {'id':'id','name':'name','city':'city','cd':'country_code'}
 post_types = {1:'Photo',2:'Video',3:'Multi'}
+
+
+# Constants
+MARIADB = 'mariadb'
+CLICKHOUSE = 'clickhouse'
