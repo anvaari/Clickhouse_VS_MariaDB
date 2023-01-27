@@ -9,12 +9,13 @@ Created on Wed Jan 25 19:10:09 2023
 from utils.queries import clickhouse_tables , mariadb_tables
 from utils.clickhouse_utils import execute_query as click_exec , insert_into_clickhouse_table
 from utils.mariadb_utils import execute_query as maria_exec , insert_into_mariadb_table
-from etc.constants import clickhouse_cred , project_path , base_log_format , normal_datetime_format , mariadb_cred , posts_columns,profiles_columns,locations_columns
+from etc.constants import clickhouse_cred , project_path , base_log_format , normal_datetime_format , mariadb_cred , posts_columns,profiles_columns,locations_columns , CLICKHOUSE,MARIADB
 
 import os
 import logging
 from datetime import datetime
 import pandas as pd
+import argparse
 
 if not os.path.isdir(os.path.join(project_path,'logs')):
     os.mkdir(os.path.join(project_path,'logs'))
@@ -25,6 +26,15 @@ logging.basicConfig(filename=log_file_path,
                     level=logging.INFO,
                     format=base_log_format)
 
-
-
-        
+def create_tables(database):
+    if database == CLICKHOUSE:
+        for table in clickhouse_tables:
+            click_exec(clickhouse_tables[table], clickhouse_cred)
+            logging.info(f"{table} created sucsessfuly in clickhouse")
+    elif database == MARIADB:
+        for table in mariadb_tables:
+            maria_exec(mariadb_tables[table], mariadb_cred)
+            logging.info(f"{table} created sucsessfuly in mariadb")
+    else:
+        raise ValueError(f"database must be on of '{CLICKHOUSE}' or '{MARIADB}' but {database} given.")
+    
