@@ -6,6 +6,9 @@ Created on Wed Jan 25 19:10:40 2023
 @author: anvaari
 """
 
+from etc.exceptions import InsertError,ExecutionError
+
+
 from clickhouse_driver import Client
 import pandas as pd
 import numpy as np
@@ -66,9 +69,10 @@ def insert_into_clickhouse_table(df:pd.DataFrame, table_name:str, clickhous_cred
     
     with Client(**clickhous_cred) as client:
         try:
-            client.execute(insert_query,data)
+            client.execute(insert_query,data,types_check=True)
         except Exception as e:
             logger.error(f"Error while insert data into {table_name} in clickhouse\nError:{e}")
+            raise InsertError
     logger.info(f"{len(data)} inserted into {table_name} in clickhouse")
     
 
@@ -90,8 +94,8 @@ def execute_query(query:str, clickhouse_cred:dict) -> None:
     """
     with Client(**clickhouse_cred) as client:
         try:
-            client.execute_iter(query)
+            client.execute(query)
         except Exception as e:
             logger.error(f"Can't execute query.\nError:{e}",exc_info=True)
-            return
+            raise ExecutionError
 logger.info("Query executed sucessfuly")
