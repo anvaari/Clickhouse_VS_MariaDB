@@ -137,3 +137,59 @@ CREATE TABLE IF NOT EXISTS instagram.post_types (
 """
 
 mariadb_tables = {'profiles':profile_table_create,'locations':location_table_create,'post_types':post_type_table_create,'posts':post_table_create}
+
+
+analytic_query_1 = """
+select 
+	max(name) as name,
+    sum(`like`)  as like_sum,
+    sum(comments) as comments_count
+from instagram.posts p inner join instagram.post_types pt on p.post_type=pt.id  
+group by post_type
+"""
+
+analytic_query_2 = """
+select 
+	profile_id,
+	argMax(location_id,location_count) as most_used_location_id,
+	argMax(name,location_count) as most_used_location_name,
+    max(location_count) as number_of_posts_with_location
+from(
+	select 
+	    location_id,
+	    groupArray(name)[1] as name,
+	    profile_id,
+	    count(id) as location_count
+	from instagram.posts p
+	    inner join instagram.locations  l on l.id=p.location_id
+	where profile_id >=0 and location_id >=0
+	group by location_id,profile_id
+)
+group by profile_id
+    """
+    
+analytic_query_3 = """
+select 
+    profile_id,
+    groupArray(name)[1] as name,
+    groupArray(followers)[1] as followers,
+    groupArray(number_of_posts)[1] as number_of_posts,
+    avg(engagement_rate) as mean_engagement_rate
+from(
+     select 
+         profile_id,
+         name,
+         followers,
+         number_of_posts,
+         ((like + comments) / followers) as engagement_rate
+     from instagram.posts post
+         inner join instagram.profiles prof on post.profile_id = prof.id
+     where like is not null and comments is not null and followers is not null and followers != 0
+     )
+group by profile_id
+order by mean_engagement_rate desc
+"""
+
+clickhouse_queries= {'post_type':analytic_query_1,
+                     'profile_location':analytic_query_2,
+                     'engagement_rate':analytic_query_3}
