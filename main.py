@@ -103,3 +103,39 @@ def insert_post_type_into_db(db:str):
         
     logging.info("All data loaded sucessfuly")
 
+if __name__ == '__main__':
+    # Parse arguments
+    parser = argparse.ArgumentParser(description="""Compare Clickhouse and MariaDB for OLAP queries.
+                                     """)
+    parser.add_argument(
+    "-db",
+    dest='database',
+    help="Database which you want to run test for it",
+    )
+    parser.add_argument(
+    "--chunk-size",
+    dest='chunk_size',
+    default=10000,
+    help="Size of chunks for reading and inserting data.",
+    )
+    parser.add_argument(
+    "--truncate",
+    dest='truncate',
+    action='store_true',
+    help="Whether truncate all table before starting or not",
+    )
+    # Assign argumnets to variables 
+    args = parser.parse_args()
+    db=args.database
+    chunk_size=args.chunk_size
+    truncate = args.truncate
+
+    create_tables(db)
+    
+    if truncate:
+        truncate_tables(db)
+        
+    insert_post_type_into_db(db)
+    for data_raw in load_data_in_batch(chunk_size):
+        table_name,data = data_raw
+        insert_data_into_db(data, db, table_name)
