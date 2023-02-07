@@ -8,7 +8,7 @@ Created on Wed Jan 25 19:10:09 2023
 
 from utils.queries import clickhouse_tables , mariadb_tables
 from utils.clickhouse_utils import execute_query as click_exec , insert_into_clickhouse_table
-from utils.mariadb_utils import execute_query as maria_exec , insert_into_mariadb_table
+from utils.mariadb_utils import execute_query as maria_exec , insert_into_mariadb_table , truncate_table as maria_trunc
 from etc.constants import clickhouse_cred , project_path , base_log_format , normal_datetime_format , mariadb_cred , posts_columns,profiles_columns,locations_columns,post_types , CLICKHOUSE,MARIADB
 from etc.exceptions import DataNotFoundError
 
@@ -46,8 +46,7 @@ def truncate_tables(database):
             click_exec(f"truncate table {table}", clickhouse_cred)
             logging.info(f"{table} truncated sucsessfuly in clickhouse")
         elif database == MARIADB:
-            maria_exec(f"truncate {table_name}", mariadb_cred)
-            logging.info(f"{table} truncated sucsessfuly in mariadb")
+            maria_trunc(table, mariadb_cred)
         else:
             raise ValueError(f"database must be on of '{CLICKHOUSE}' or '{MARIADB}' but {database} given.")
 
