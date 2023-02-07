@@ -68,13 +68,16 @@ def insert_into_mariadb_table(df:pd.DataFrame, table_name:str, mariadb_cred:dict
     columns = f"{tuple([x for x in df.columns])}".replace("'","`")
     del df
     
-    insert_query = f"INSERT INTO {table_name} {columns} values" + f"{tuple(['%s' for x in range(len(columns))])}".replace("'","")
+    insert_query = f"INSERT INTO {table_name} {columns} values" + f"{tuple(['%s' for x in range(len(data[0]))])}".replace("'","")
     
     with mariadb.connect(**mariadb_cred) as connection:
         with connection.cursor() as cursor:
+            cursor.execute("SET FOREIGN_KEY_CHECKS=0;")
             try:
                 cursor.executemany(insert_query,data)
+                connection.commit()
             except mariadb.Error as e:
+                connection.rollback()
                 logger.error(f"Error while insert data into {table_name} in mariadb\nError:{e}")
                 raise InsertError
     logger.info(f"{len(data)} inserted into {table_name} in mariadb")
@@ -84,9 +87,22 @@ def execute_query(query:str, mariadb_cred:dict):
         with connection.cursor() as cursor:
             try:
                 cursor.execute(query)
+                connection.commit()
             except mariadb.Error as e:
+                connection.rollback()
                 logger.error(f"Can't execute query.\nError:{e}",exc_info=True)
-                raise InsertError
+                raise ExecutionError
     logger.info("Query executed sucessfuly")
     
-    
+def truncate_table(table_name:str,mariadb_cred:dict):
+    with mariadb.connect(**mariadb_cred) as connection:
+        with connection.cursor() as cursor:
+            try:
+                cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
+                cursor.execute(f"truncate {table_name}")
+                connection.commit()
+            except mariadb.Error as e:
+                connection.rollback()
+                logger.error(f"Can't truncate {table_name}.\nError:{e}",exc_info=True)
+                raise ExecutionError
+    logger.info(f"{table_name} truncated sucessfuy")
