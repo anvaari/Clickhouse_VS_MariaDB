@@ -193,3 +193,72 @@ order by mean_engagement_rate desc
 clickhouse_queries= {'post_type':analytic_query_1,
                      'profile_location':analytic_query_2,
                      'engagement_rate':analytic_query_3}
+
+analytic_query_1 = """
+select 
+	max(name) as name,
+    sum(`like`)  as like_sum,
+    sum(comments) as comments_count
+from instagram.posts p inner join instagram.post_types pt on p.post_type=pt.id  
+group by post_type
+"""
+
+analytic_query_2 = """
+select 
+	normal.profile_id,
+	normal.location_id,
+	normal.name,
+    normal.location_count
+from(
+	select 
+	    location_id,
+	    max(name) as name,
+	    profile_id,
+	    count(l.id) as location_count
+	from instagram.posts p
+	    inner join instagram.locations  l on l.id=p.location_id
+	where profile_id >=0 and location_id >=0
+	group by location_id,profile_id
+) as normal
+inner join 
+(select 
+	b.profile_id as b_p,
+    max(b.location_count) as max_loc
+from(
+	select 
+	    profile_id,
+	    count(l.id) as location_count
+	from instagram.posts p
+	    inner join instagram.locations  l on l.id=p.location_id
+	where profile_id >=0 and location_id >=0
+	group by location_id,profile_id
+) as b
+group by profile_id ) as max_loc_q
+where normal.location_count = max_loc_q.max_loc 
+    """
+    
+analytic_query_3 = """
+select 
+    profile_id,
+    max(name) as name,
+    max(followers) as followers,
+    max(number_of_posts) as number_of_posts,
+    avg(engagement_rate) as mean_engagement_rate
+from(
+     select 
+         profile_id,
+         name,
+         followers,
+         number_of_posts,
+         ((`like` + comments) / followers) as engagement_rate
+     from instagram.posts post
+         inner join instagram.profiles prof on post.profile_id = prof.id
+     where `like` is not null and comments is not null and followers is not null and followers != 0
+     ) as eng_q
+group by profile_id
+order by mean_engagement_rate desc
+"""
+
+mariadb_queries= {'post_type':analytic_query_1,
+                     'profile_location':analytic_query_2,
+                     'engagement_rate':analytic_query_3}
