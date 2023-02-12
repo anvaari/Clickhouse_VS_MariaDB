@@ -6,9 +6,9 @@ Created on Wed Jan 25 19:10:09 2023
 @author: anvaari
 """
 
-from utils.queries import clickhouse_tables , mariadb_tables
-from utils.clickhouse_utils import execute_query as click_exec , insert_into_clickhouse_table
-from utils.mariadb_utils import execute_query as maria_exec , insert_into_mariadb_table , truncate_table as maria_trunc
+from utils.queries import clickhouse_tables , mariadb_tables , clickhouse_queries , mariadb_queries 
+from utils.clickhouse_utils import execute_query as click_exec , insert_into_clickhouse_table , get_query_as_dataframe as click_get_query
+from utils.mariadb_utils import execute_query as maria_exec , insert_into_mariadb_table , truncate_table as maria_trunc , get_query_as_dataframe as maria_get_query
 from etc.constants import clickhouse_cred , project_path , base_log_format , normal_datetime_format , mariadb_cred , posts_columns,profiles_columns,locations_columns,post_types , CLICKHOUSE,MARIADB
 from etc.exceptions import DataNotFoundError
 
@@ -16,7 +16,9 @@ import os
 import logging
 from datetime import datetime
 import pandas as pd
+from numpy import std,mean
 import argparse
+import time
 
 if not os.path.isdir(os.path.join(project_path,'logs')):
     os.mkdir(os.path.join(project_path,'logs'))
@@ -101,6 +103,29 @@ def insert_post_type_into_db(db:str):
     insert_funcs[db](post_type_df,'post_types',credentials[db])
         
     logging.info("All data loaded sucessfuly")
+    
+    
+def execute_analytical_queries(db,number_of_execution):
+    if db == CLICKHOUSE:
+        for q in clickhouse_queries:
+            time_list = []
+            for i in range(number_of_execution):
+                tic = time.time()
+                click_get_query(clickhouse_queries[q], clickhouse_cred)
+                toc = time.time()
+                time_list.append(toc-tic)
+            logging.info(f"{q} query executed in {round(mean(time_list),2)}±{round(std(time_list),2)} seconds in Clickhouse")
+    elif db == MARIADB:
+        for q in mariadb_queries:
+            time_list = []
+            for i in range(number_of_execution):
+                tic = time.time()
+                maria_get_query(mariadb_queries[q], mariadb_cred)
+                toc = time.time()
+                time_list.append(toc-tic)
+            logging.info(f"{q} query executed in {round(mean(time_list),2)}±{round(std(time_list),2)} seconds in MariaDB")
+    else:
+        raise ValueError(f"database must be on of '{CLICKHOUSE}' or '{MARIADB}' but {db} given.")
 
 if __name__ == '__main__':
     # Parse arguments
@@ -110,6 +135,7 @@ if __name__ == '__main__':
     "-db",
     dest='database',
     help="Database which you want to run test for it",
+    required=True
     )
     parser.add_argument(
     "--chunk-size",
@@ -123,18 +149,48 @@ if __name__ == '__main__':
     action='store_true',
     help="Whether truncate all table before starting or not",
     )
+    parser.add_argument(
+    "--insert",
+    dest='insert',
+    action='store_true',
+    help="Whether insert data into tables or not",
+    )
+    parser.add_argument(
+    "--query",
+    dest='query',
+    action='store_true',
+    help="Whether execute analytical query or not",
+    )
+    parser.add_argument(
+    "--number-of-test",
+    dest='n_test',
+    default=20,
+    type=int,
+    help="number of time, queries going to execute",
+    )
     # Assign argumnets to variables 
     args = parser.parse_args()
     db=args.database
     chunk_size=args.chunk_size
     truncate = args.truncate
-
+    insert = args.insert
+    query = args.query
+    n_test = args.n_test
+    
     create_tables(db)
     
     if truncate:
         truncate_tables(db)
         
-    insert_post_type_into_db(db)
-    for data_raw in load_data_in_batch(chunk_size):
-        table_name,data = data_raw
-        insert_data_into_db(data, db, table_name)
+    if insert:
+        tic = time.time()
+        insert_post_type_into_db(db)
+        for data_raw in load_data_in_batch(chunk_size):
+            table_name,data = data_raw
+            insert_data_into_db(data, db, table_name)
+        toc = time.time()
+        logging.info(f"Inserting data last {(toc-tic)/60} minutes for {db}")
+    
+    if query:
+        execute_analytical_queries(db,n_test)
+   
