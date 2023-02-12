@@ -16,7 +16,7 @@ import logging
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def get_query_as_dataframe(query:str,columns_name:list, mariadb_cred:dict) -> pd.DataFrame:
+def get_query_as_dataframe(query:str,mariadb_cred:dict) -> pd.DataFrame:
     '''
     Execute select query and return result as pandas dataframe
 
@@ -24,8 +24,6 @@ def get_query_as_dataframe(query:str,columns_name:list, mariadb_cred:dict) -> pd
     ----------
     query : str
         Query to mariadb server.
-    columns_name : str
-        name of columns which exist in query.
     mariadb_cred : dict
         dictioanry which contains host ip,port,username and password for connecting to mariadb.
 
@@ -41,7 +39,7 @@ def get_query_as_dataframe(query:str,columns_name:list, mariadb_cred:dict) -> pd
              cursor.execute(query)
              data = list(cursor)
     
-    result = pd.DataFrame(data=data,columns=columns_name)   
+    result = pd.DataFrame(data=data)   
     return result
 
 def insert_into_mariadb_table(df:pd.DataFrame, table_name:str, mariadb_cred:dict) -> pd.DataFrame :
