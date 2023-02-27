@@ -2,5 +2,4 @@
 
 Readme file will be completed by March 3 ...
 
-See video of presentation [in youtube](https://youtu.be/rQr3tAuNAgM)
-Get [PDF file](https://github.com/anvaari/Clickhouse_VS_MariaDB/blob/main/Clickhouse%20Presentation.pdf) of presentation
+You can see video of presentation [in youtube](https://youtu.be/rQr3tAuNAgM). Also you can access PDF file from [here](https://github.com/anvaari/Clickhouse_VS_MariaDB/blob/main/Clickhouse%20Presentation.pdf).
